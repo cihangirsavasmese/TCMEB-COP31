@@ -222,7 +222,7 @@ footer .sar{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
     <p class="gp">Sunumun tamamı için kararınız ve listede olmayan ek istekler.</p>
     <div class="onaykutu"><div class="karar"><label class="sec onay"><input type="radio" name="k0" value="onay"> Onaylıyorum</label><label class="sec duz"><input type="radio" name="k0" value="duzeltme"> Düzeltme istiyorum</label></div><textarea name="n0" placeholder="Not ya da düzeltme (isteğe bağlı)"></textarea><div class="yanitlar"></div></div>
   </article>
-  <div class="nasil"><i>✓</i><div><b>Nasıl yanıtlanır?</b><p>Her slayt için “Onaylıyorum” ya da “Düzeltme istiyorum” seçin, gerekiyorsa not yazın. En alttaki çubuğa adınızı yazıp “Kaydet”e basın; kayıt bağlı değilse “WhatsApp ile gönder” ya da “Kopyala” ile iletin. Onaydan sonra animasyonlu ve statik PowerPoint üretilecek.</p></div></div>
+  <div class="nasil"><i>✓</i><div><b>Nasıl yanıtlanır?</b><p>Her slayt için “Onaylıyorum” ya da “Düzeltme istiyorum” seçin, gerekiyorsa not yazın. En alttaki çubuğa adınızı yazıp “Kaydet”e basın. Revizeleri kaydettiğinizi bildirmeniz yeterli.</p></div></div>
 </main>
 <div class="gonder"><div class="ic">
   <input id="ad" placeholder="Ad Soyad (gerekli)" autocomplete="name">
@@ -296,7 +296,7 @@ function ciz(satirlar) {
   $('ozet').innerHTML = '<span>Son durum (her kişinin en son yanıtına göre):</span><span class="rz o">' + onay + ' onay</span><span class="rz d">' + duz + ' düzeltme</span><span class="rz b">' + bos + ' yanıtsız</span>';
 }
 async function yanitlariGetir() {
-  if (!hazir()) { $('ozet').innerHTML = '<span>Yanıt kaydı henüz bağlı değil. Kararınızı “WhatsApp ile gönder” ya da “Kopyala” ile iletebilirsiniz.</span>'; return; }
+  if (!hazir()) { $('ozet').hidden = true; return; }   // kayıt sunucusu yok: kararlar bu tarayıcıda saklanır, bildirmeleri yeterli
   try { const r = await fetch(URL_ + '?t=' + Date.now(), {cache: 'no-store'}); const j = await r.json(); ciz(j.satirlar || []); }
   catch (e) { $('ozet').innerHTML = '<span>Yanıtlar yüklenemedi; sayfayı yenileyin.</span>'; }
 }
@@ -311,7 +311,10 @@ $('kaydet').onclick = async () => {
   if (!v.ad) { kutu('sorun', '✋', 'Adınızı yazın', 'Kaydetmeden önce alttaki kutuya adınızı yazmanız gerekiyor.', true); $('ad').focus(); return; }
   const kayitlar = bolumler.map(b => ({no: b.dataset.no, bolum: b.dataset.ad, ad: v.ad, karar: v['k' + b.dataset.no], not: (v['n' + b.dataset.no] || '').trim()})).filter(k => k.karar || k.not);
   if (!kayitlar.length) { kutu('sorun', '✋', 'Seçim yok', 'En az bir slayt için “Onaylıyorum” ya da “Düzeltme istiyorum” seçin ya da bir not yazın.', true); return; }
-  if (!hazir()) { kutu('sorun', '⚠️', 'Kayıt bağlı değil', 'Lütfen “WhatsApp ile gönder” ya da “Kopyala” ile iletin.', true); return; }
+  if (!hazir()) {
+    yaz(v); const d0 = $('kaydet'); d0.classList.add('oldu'); d0.textContent = 'Kaydedildi ✓'; setTimeout(() => { d0.classList.remove('oldu'); d0.textContent = 'Kaydet'; }, 8000);
+    kutu('oldu', '✅', 'Kaydedildi', 'Revizeleri kaydettiğinizi bildirmeniz yeterli.', true); durum('Kaydedildi (' + kayitlar.length + ' bölüm).'); return;
+  }
   const d = $('kaydet'); d.disabled = true; durum('Kaydediliyor…');
   kutu('bekle', '⏳', 'Kaydediliyor…', 'Yanıtlarınız gönderiliyor, lütfen bekleyin.', false);
   const onceki = await satirSay();
